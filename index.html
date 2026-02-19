@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FMGER // Game Developer & Digital Architect</title>
+    <meta name="description"
+        content="Portfolio de fmger - Desarrollador de videojuegos, creador de experiencias en Godot Engine.">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@300;400;600;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --void-black: #020202;
+            --void-white: #f0f0f0;
+            --void-gray: #121212;
+            --accent: #ffffff;
+            --accent-dim: #888888;
+        }
+
+        * {
+            cursor: crosshair;
+            user-select: none;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--void-black);
+            color: var(--void-white);
+            font-family: 'Share Tech Mono', monospace;
+            overflow-x: hidden;
+        }
+
+        /* --- PRELOADER --- */
+        #preloader {
+            position: fixed;
+            inset: 0;
+            background: var(--void-black);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        #preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loader-bar {
+            width: 200px;
+            height: 2px;
+            background: #111;
+            margin-top: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .loader-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: white;
+            animation: load-sweep 1.2s ease-in-out infinite;
+        }
+
+        @keyframes load-sweep {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 100%;
+            }
+        }
+
+        /* --- EFECTOS CRT Y RUIDO --- */
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/1k_pnt_noise.png');
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 2000;
+        }
+
+        .crt-lines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.08) 50%);
+            background-size: 100% 4px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        #void-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        /* --- ANIMACIONES --- */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+            filter: blur(8px);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+            filter: blur(0);
+        }
+
+        .reveal-delay-1 {
+            transition-delay: 0.1s;
+        }
+
+        .reveal-delay-2 {
+            transition-delay: 0.2s;
+        }
+
+        .reveal-delay-3 {
+            transition-delay: 0.3s;
+        }
+
+        .reveal-delay-4 {
+            transition-delay: 0.4s;
+        }
+
+        @keyframes scan {
+            from {
+                top: -10%;
+            }
+
+            to {
+                top: 110%;
+            }
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.04), transparent);
+            animation: scan 8s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes float-y {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+            }
+
+            50% {
+                box-shadow: 0 0 30px 5px rgba(255, 255, 255, 0.05);
+            }
+        }
+
+        @keyframes typing {
+            from {
+                width: 0;
+            }
+
+            to {
+                width: 100%;
+            }
+        }
+
+        @keyframes blink-caret {
+            50% {
+                border-color: transparent;
+            }
+        }
+
+        /* --- TARJETAS Y BOTONES --- */
+        .void-card {
+            background: rgba(10, 10, 10, 0.95);
+            border: 1px solid #1a1a1a;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .void-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .void-card:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 60px rgba(255, 255, 255, 0.04), inset 0 0 30px rgba(255, 255, 255, 0.02);
+            transform: translateY(-8px);
+        }
+
+        .btn-void {
+            padding: 14px 28px;
+            border: 1px solid #333;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 3px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-void:hover {
+            color: #000;
+            border-color: #fff;
+            letter-spacing: 5px;
+        }
+
+        .btn-void::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: #fff;
+            z-index: -1;
+            transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-void:hover::after {
+            width: 100%;
+        }
+
+        /* --- SISTEMA DE LOGS --- */
+        #terminal-log {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 280px;
+            height: 130px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid #1a1a1a;
+            padding: 10px;
+            font-size: 9px;
+            color: #444;
+            overflow: hidden;
+            z-index: 50;
+            pointer-events: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .skill-bar {
+            height: 3px;
+            background: #111;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skill-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #333, #fff);
+            width: 0;
+            transition: width 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Glitch text effect */
+        .glitch-hover:hover {
+            animation: glitch-anim 0.15s infinite;
+        }
+
+        @keyframes glitch-anim {
+            0% {
+                transform: translate(0);
+                text-shadow: 2px 0 red, -2px 0 cyan;
+            }
+
+            25% {
+                transform: translate(-3px, 1px);
+                text-shadow: -2px 0 red, 2px 0 cyan;
+            }
+
+            50% {
+                transform: translate(2px, -2px);
+                text-shadow: 2px 0 red, -3px 0 cyan;
+            }
+
+            75% {
+                transform: translate(1px, 3px);
+                text-shadow: -1px 0 red, 1px 0 cyan;
+            }
+
+            100% {
+                transform: translate(-1px, -1px);
+                text-shadow: 2px 0 red, -2px 0 cyan;
+            }
+        }
+
+        /* --- SOBRE MI --- */
+        .about-stat {
+            border: 1px solid #1a1a1a;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .about-stat::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #fff, transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .about-stat:hover {
+            border-color: #333;
+            transform: translateY(-4px);
+        }
+
+        .about-stat:hover::before {
+            opacity: 1;
+        }
+
+        .about-stat .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #fff, #666);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .about-stat .stat-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #999;
+            margin-top: 6px;
+        }
+
+        .about-tag {
+            display: inline-block;
+            padding: 6px 16px;
+            border: 1px solid #333;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #aaa;
+            transition: all 0.3s ease;
+        }
+
+        .about-tag:hover {
+            border-color: #fff;
+            color: #fff;
+            transform: scale(1.05);
+        }
+
+        /* --- PROJECT MODAL --- */
+        #project-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 5000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+        }
+
+        #project-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #project-modal .modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        #project-modal .modal-content {
+            position: relative;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            background: #0a0a0a;
+            border: 1px solid #222;
+            transform: translateY(30px) scale(0.95);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        #project-modal.active .modal-content {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-content::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: #333;
+        }
+
+        /* --- HAMBURGER MENU --- */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: crosshair;
+            z-index: 3000;
+            padding: 5px;
+        }
+
+        .hamburger span {
+            width: 20px;
+            height: 1px;
+            background: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translateY(4px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translateY(-4px);
+        }
+
+        .mobile-menu {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 2, 2, 0.97);
+            z-index: 2500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(20px);
+        }
+
+        .mobile-menu.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .mobile-menu a {
+            font-size: 16px;
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            color: #bbb;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu a:hover {
+            color: #fff;
+            letter-spacing: 0.8em;
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+        }
+
+        /* --- SMOOTH SCROLLBAR --- */
+        body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        body::-webkit-scrollbar-track {
+            background: #020202;
+        }
+
+        body::-webkit-scrollbar-thumb {
+            background: #222;
+            border-radius: 3px;
+        }
+
+        body::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+
+        /* --- SECTION DIVIDER --- */
+        .section-divider {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #222, transparent);
+            margin: 0 auto;
+        }
+
+        /* --- OUTFIT FONT FOR HEADINGS --- */
+        .font-display {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* --- CONTACT FORM --- */
+        .contact-form input,
+        .contact-form textarea {
+            width: 100%;
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid #2a2a2a;
+            padding: 14px 18px;
+            color: #e0e0e0;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            outline: none;
+            letter-spacing: 1px;
+        }
+
+        .contact-form input:focus,
+        .contact-form textarea:focus {
+            border-color: #fff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+        }
+
+        .contact-form input::placeholder,
+        .contact-form textarea::placeholder {
+            color: #555;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .contact-form textarea {
+            resize: vertical;
+            min-height: 140px;
+        }
+
+        .contact-form label {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        #form-status {
+            transition: all 0.4s ease;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- PRELOADER -->
+    <div id="preloader">
+        <div class="text-[10px] tracking-[0.8em] text-zinc-500 uppercase">Inicializando sistema</div>
+        <div class="loader-bar"></div>
+    </div>
+
+    <div class="noise-overlay"></div>
+    <div class="crt-lines"></div>
+    <canvas id="void-canvas"></canvas>
+
+    <div id="terminal-log"></div>
+
+    <!-- NAVEGACIÓN -->
+    <nav class="fixed top-0 left-0 w-full z-[2000] p-6 md:p-8 flex justify-between items-center mix-blend-difference">
+        <div class="text-xs tracking-[0.5em] font-bold">FMGER<span class="text-zinc-600">_OS</span></div>
+        <div class="hidden md:flex gap-12 text-[10px] tracking-widest uppercase items-center">
+            <a href="#inicio" onclick="playSound('nav')"
+                class="hover:text-zinc-400 transition-all duration-300 hover:tracking-[0.3em]">Inicio</a>
+            <a href="#sobre-mi" onclick="playSound('nav')"
+                class="hover:text-zinc-400 transition-all duration-300 hover:tracking-[0.3em]">Sobre_Mí</a>
+            <a href="#proyectos" onclick="playSound('nav')"
+                class="hover:text-zinc-400 transition-all duration-300 hover:tracking-[0.3em]">Proyectos</a>
+            <a href="#skills" onclick="playSound('nav')"
+                class="hover:text-zinc-400 transition-all duration-300 hover:tracking-[0.3em]">Experiencia</a>
+            <a href="#contacto" onclick="playSound('nav')"
+                class="hover:text-zinc-400 transition-all duration-300 hover:tracking-[0.3em]">Contacto</a>
+            <div id="status-dot" class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        </div>
+        <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </nav>
+
+    <!-- MOBILE MENU -->
+    <div class="mobile-menu" id="mobile-menu">
+        <a href="#inicio" onclick="closeMobileMenu(); playSound('nav')">Inicio</a>
+        <a href="#sobre-mi" onclick="closeMobileMenu(); playSound('nav')">Sobre_Mí</a>
+        <a href="#proyectos" onclick="closeMobileMenu(); playSound('nav')">Proyectos</a>
+        <a href="#skills" onclick="closeMobileMenu(); playSound('nav')">Experiencia</a>
+        <a href="#contacto" onclick="closeMobileMenu(); playSound('nav')">Contacto</a>
+    </div>
+
+    <!-- HEADER -->
+    <header id="inicio" class="min-h-screen flex flex-col justify-center items-center relative px-6 text-center">
+        <div class="scan-line"></div>
+        <div class="reveal active">
+            <div class="text-[10px] tracking-[1em] mb-6 text-zinc-400 uppercase">Sincronizando con el Vacío</div>
+            <h1 class="text-5xl md:text-8xl lg:text-9xl font-display font-bold tracking-tighter mb-4 glitch-hover"
+                data-text="FMGER">FMGER</h1>
+            <p class="text-zinc-400 text-base md:text-base tracking-[0.3em] uppercase mb-2">Game Developer & Digital
+                Architect</p>
+            <div class="flex justify-center gap-4 mb-14">
+                <span class="text-xl opacity-15 italic">☠︎ 💣︎ ✌︎ ☼︎</span>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4 md:gap-6">
+                <button onclick="scrollToSection('proyectos'); playSound('confirm')"
+                    class="btn-void">Inicializar_Proyectos</button>
+                <button onclick="scrollToSection('sobre-mi'); playSound('confirm')"
+                    class="btn-void border-none text-zinc-600">Sobre_Mí</button>
+            </div>
+        </div>
+        <!-- Scroll indicator -->
+        <div class="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 opacity-30"
+            style="animation: float-y 3s ease-in-out infinite;">
+            <div class="text-[8px] tracking-[0.5em] uppercase">Scroll</div>
+            <div class="w-px h-8 bg-gradient-to-b from-white to-transparent"></div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6">
+
+        <!-- SECTION: SOBRE MÍ -->
+        <section id="sobre-mi" class="py-32 md:py-40">
+            <div class="section-divider mb-20"></div>
+            <div class="grid md:grid-cols-5 gap-12 md:gap-16">
+                <!-- Left column: Title + Bio -->
+                <div class="md:col-span-3 reveal">
+                    <div class="text-[11px] text-zinc-400 tracking-[0.5em] uppercase mb-4"># Sobre_Mí</div>
+                    <h2 class="text-3xl md:text-4xl font-display font-bold mb-8 tracking-tight">Fragmentos<br>de un
+                        <span class="text-zinc-400">Desarrollador</span>
+                    </h2>
+                    <div class="space-y-5 text-zinc-300 text-sm leading-relaxed">
+                        <p>
+                            Soy <span class="text-white font-bold">fmger</span>, un desarrollador de videojuegos
+                            obsesionado con crear experiencias que se sientan <span class="text-white">viscerales y
+                                únicas</span>. Mi herramienta principal es <span class="text-white">Godot Engine</span>,
+                            donde transformo ideas en realidades interactivas.
+                        </p>
+                        <p>
+                            Desde shaders que distorsionan la realidad hasta sistemas de combate que se sienten <span
+                                class="text-white">impactantes</span>, cada línea de código está diseñada para provocar
+                            una reacción. No creo juegos — construyo <span class="text-white">experiencias</span>.
+                        </p>
+                        <p>
+                            Mi filosofía es simple: el código es arquitectura de mundos. Cada nodo en Godot es un
+                            fragmento de voluntad materializado en píxeles y lógica.
+                        </p>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="flex flex-wrap gap-3 mt-10">
+                        <span class="about-tag">Godot Engine</span>
+                        <span class="about-tag">GDScript</span>
+                        <span class="about-tag">C#</span>
+                        <span class="about-tag">Shaders</span>
+                        <span class="about-tag">Game Feel</span>
+                        <span class="about-tag">VFX</span>
+                        <span class="about-tag">Level Design</span>
+                    </div>
+                </div>
+
+                <!-- Right column: Stats -->
+                <div class="md:col-span-2 reveal reveal-delay-2">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="about-stat">
+                            <div class="stat-number">3+</div>
+                            <div class="stat-label">Años Dev</div>
+                        </div>
+                        <div class="about-stat">
+                            <div class="stat-number">10+</div>
+                            <div class="stat-label">Prototipos</div>
+                        </div>
+                        <div class="about-stat">
+                            <div class="stat-number">∞</div>
+                            <div class="stat-label">Ideas</div>
+                        </div>
+                        <div class="about-stat">
+                            <div class="stat-number">1</div>
+                            <div class="stat-label">Obsesión</div>
+                        </div>
+                    </div>
+
+                    <!-- Philosophy quote -->
+                    <div class="mt-6 p-6 border border-zinc-900 bg-zinc-950/50 relative">
+                        <div class="absolute top-3 right-3 text-[8px] text-zinc-700 tracking-widest">[ENTRY_LOG]</div>
+                        <p class="text-zinc-300 text-xs leading-relaxed italic mt-2">
+                            "El código no es solo una instrucción; es la arquitectura de una realidad paralela. En
+                            Godot, cada nodo es un fragmento de voluntad."
+                        </p>
+                        <div class="text-[9px] text-zinc-500 mt-4 tracking-widest">— FMGER // SYSTEM_CORE</div>
+                    </div>
+
+                    <!-- Status indicator -->
+                    <div class="mt-4 p-4 border border-zinc-900 flex items-center gap-3">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span class="text-[10px] text-zinc-400 tracking-widest uppercase">Status: Creando algo
+                            nuevo</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: SKILLS / KERNEL -->
+        <section id="skills" class="py-32 md:py-40 reveal">
+            <div class="section-divider mb-20"></div>
+            <div class="text-center mb-16 reveal">
+                <div class="text-[11px] text-zinc-400 tracking-[0.5em] uppercase mb-4"># Exp_Data</div>
+                <h2 class="text-3xl md:text-4xl font-display font-bold tracking-tight">Núcleo <span
+                        class="text-zinc-400">Técnico</span></h2>
+            </div>
+            <div class="grid md:grid-cols-2 gap-16 md:gap-20">
+                <div class="reveal reveal-delay-1">
+                    <div class="space-y-8">
+                        <div>
+                            <div class="flex justify-between text-[10px] mb-3 uppercase tracking-wider"><span
+                                    class="text-zinc-300">Godot_Engine (GDScript/C#)</span><span
+                                    class="text-zinc-400">95%</span></div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="95%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[10px] mb-3 uppercase tracking-wider"><span
+                                    class="text-zinc-300">Shaders_&_Visual_FX</span><span
+                                    class="text-zinc-400">88%</span></div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="88%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[10px] mb-3 uppercase tracking-wider"><span
+                                    class="text-zinc-300">Game_Feel_Optimization</span><span
+                                    class="text-zinc-400">92%</span></div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="92%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[10px] mb-3 uppercase tracking-wider"><span
+                                    class="text-zinc-300">Multiplayer_Networking</span><span
+                                    class="text-zinc-400">85%</span></div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="75%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[10px] mb-3 uppercase tracking-wider"><span
+                                    class="text-zinc-300">AI_&_Behavior_Systems</span><span
+                                    class="text-zinc-400">82%</span></div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" data-width="82%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="reveal reveal-delay-2">
+                    <div class="bg-zinc-950/50 p-8 border border-zinc-900 mb-6">
+                        <div class="text-[10px] text-zinc-400 tracking-widest mb-4 uppercase">// Herramientas &
+                            Ecosistema</div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div
+                                class="text-[11px] text-zinc-300 p-3 border border-zinc-900 hover:border-zinc-600 hover:text-white transition-colors">
+                                ▸ Godot 4.x</div>
+                            <div
+                                class="text-[11px] text-zinc-300 p-3 border border-zinc-900 hover:border-zinc-600 hover:text-white transition-colors">
+                                ▸ Aseprite</div>
+                            <div
+                                class="text-[11px] text-zinc-300 p-3 border border-zinc-900 hover:border-zinc-600 hover:text-white transition-colors">
+                                ▸ Blender</div>
+                            <div
+                                class="text-[11px] text-zinc-300 p-3 border border-zinc-900 hover:border-zinc-600 hover:text-white transition-colors">
+                                ▸ Git / GitHub</div>
+                            <div
+                                class="text-[11px] text-zinc-300 p-3 border border-zinc-900 hover:border-zinc-600 hover:text-white transition-colors">
+                                ▸ Supabase</div>
+
+                        </div>
+                    </div>
+                    <div class="p-6 border border-zinc-900 bg-black/30">
+                        <p class="text-zinc-300 text-sm leading-relaxed">
+                            Cada proyecto es un laboratorio. Experimentar con los límites de lo que el motor puede hacer
+                            es lo que convierte un juego decente en una <span class="text-white">experiencia
+                                inolvidable</span>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: PROYECTOS -->
+        <section id="proyectos" class="py-32 md:py-40">
+            <div class="section-divider mb-20"></div>
+            <div class="mb-20 text-center reveal">
+                <div class="text-[11px] text-zinc-400 tracking-[0.5em] uppercase mb-4"># Proyectos_Recuperados</div>
+                <h2 class="text-3xl md:text-4xl font-display font-bold tracking-tight">Proyectos <span
+                        class="text-zinc-400">& Experimentos</span></h2>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Proyecto 1 -->
+                <div class="void-card p-6 reveal group" data-project="0">
+                    <div class="aspect-video mb-6 bg-zinc-900 relative overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1614728263952-84ea206f99b6?auto=format&fit=crop&w=600"
+                            class="w-full h-full object-cover grayscale opacity-30 group-hover:opacity-100 group-hover:grayscale-0 transition duration-700"
+                            alt="VOID_RUNNER project" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute top-3 right-3 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    </div>
+                    <div class="text-[10px] text-zinc-400 mb-2 tracking-wider">#ENTRY_001 // GODOT_4</div>
+                    <h3 class="text-xl font-bold mb-3 tracking-tighter font-display">Lost in the wild</h3>
+                    <p class="text-zinc-300 text-sm mb-6 leading-relaxed">Juego de supervivencia pixel art con narrativa
+                        emergente.</p>
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <span
+                            class="text-[9px] px-2 py-1 border border-zinc-700 text-zinc-400 uppercase tracking-wider">2D</span>
+                        <span
+                            class="text-[9px] px-2 py-1 border border-zinc-700 text-zinc-400 uppercase tracking-wider">Survival</span>
+                        <span
+                            class="text-[9px] px-2 py-1 border border-zinc-700 text-zinc-400 uppercase tracking-wider">Narrative</span>
+                    </div>
+                    <button onclick="openProject(0); playSound('confirm')"
+                        class="btn-void w-full text-center">Acceder</button>
+                </div>
+
+                <!-- Proyecto 2 -->
+                <div class="void-card p-6 reveal reveal-delay-1 group" data-project="1">
+                    <div class="aspect-video mb-6 bg-zinc-900 relative overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=600"
+                            class="w-full h-full object-cover grayscale opacity-30 group-hover:opacity-100 group-hover:grayscale-0 transition duration-700"
+                            alt="GLITCH_KIT project" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute top-3 right-3 w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                    </div>
+                    <div class="text-[10px] text-zinc-400 mb-2 tracking-wider">#ENTRY_002 // TOOL</div>
+                    <h3 class="text-xl font-bold mb-3 tracking-tighter font-display">Vesta</h3>
+                    <p class="text-zinc-300 text-sm mb-6 leading-relaxed">Aplicacion para la gestion de recursos
+                        financieros.</p>
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <span
+                            class="text-[9px] px-2 py-1 border border-zinc-700 text-zinc-400 uppercase tracking-wider">Tool</span>
+                        <span
+                            class="text-[9px] px-2 py-1 border border-zinc-700 text-zinc-400 uppercase tracking-wider">Finances</span>
+                        <span
+                            class="text-[9px] px-2 py-1 border border-zinc-700 text-zinc-400 uppercase tracking-wider">Administration</span>
+                    </div>
+                    <button onclick="openProject(1); playSound('confirm')"
+                        class="btn-void w-full text-center">Acceder</button>
+                </div>
+
+                <!-- Proyecto 3 -->
+                <div class="void-card p-6 reveal reveal-delay-2 group" data-project="2">
+                    <div class="aspect-video mb-6 bg-zinc-900 relative overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&w=600"
+                            class="w-full h-full object-cover grayscale opacity-30 group-hover:opacity-100 group-hover:grayscale-0 transition duration-700"
+                            alt="THE_LAB_DEMO project" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    </div>
+                    <div class="text-[10px] text-zinc-400 mb-2 tracking-wider">#ENTRY_017 // 3D</div>
+                    <h3 class="text-xl font-bold mb-3 tracking-tighter font-display">Game of champions</h3>
+                    <p class="text-zinc-300 text-sm mb-6 leading-relaxed">Moba 5v5 en desarrollo.</p>
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <span
+                            class="text-[9px] px-2 py-1 border border-zinc-700 text-zinc-400 uppercase tracking-wider">3D</span>
+                        <span
+                            class="text-[9px] px-2 py-1 border border-zinc-700 text-zinc-400 uppercase tracking-wider">Moba</span>
+                        <span
+                            class="text-[9px] px-2 py-1 border border-zinc-700 text-zinc-400 uppercase tracking-wider">Demo</span>
+                    </div>
+                    <button onclick="openProject(2); playSound('confirm')"
+                        class="btn-void w-full text-center">Acceder</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: CONTACTO -->
+        <section id="contacto" class="py-32 md:py-40 reveal">
+            <div class="section-divider mb-20"></div>
+            <div class="text-center mb-16">
+                <div class="text-[11px] text-zinc-400 tracking-[0.5em] uppercase mb-4"># Terminal_de_Contacto</div>
+                <h2 class="text-3xl md:text-4xl font-display font-bold mb-4 tracking-tight">¿Estás <span
+                        class="text-zinc-400">Escuchando</span>?</h2>
+                <p class="text-zinc-300 text-sm tracking-wider mb-4 max-w-lg mx-auto">Abre un canal de comunicación.
+                    Cada mensaje es un fragmento que llega al otro lado del vacío.</p>
+            </div>
+
+            <div class="grid md:grid-cols-5 gap-12 md:gap-16">
+                <!-- Contact Form -->
+                <div class="md:col-span-3">
+                    <form class="contact-form space-y-5" id="contact-form" onsubmit="handleFormSubmit(event)">
+                        <!-- Web3Forms Access Key - REEMPLAZA con tu key real de web3forms.com -->
+                        <input type="hidden" name="access_key" value="934e7fba-27e6-4810-a339-5bc331fe1491">
+                        <input type="hidden" name="from_name" value="FMGER Portfolio">
+                        <input type="hidden" name="subject" id="hidden-subject" value="Nuevo mensaje desde Portfolio">
+                        <!-- Honeypot anti-spam -->
+                        <input type="checkbox" name="botcheck" class="hidden" style="display:none">
+                        <div class="grid sm:grid-cols-2 gap-5">
+                            <div>
+                                <label for="contact-name">Nombre</label>
+                                <input type="text" id="contact-name" name="name" placeholder="Tu nombre..." required
+                                    onfocus="playSound('click')">
+                            </div>
+                            <div>
+                                <label for="contact-email">Email</label>
+                                <input type="email" id="contact-email" name="email" placeholder="tu@email.com" required
+                                    onfocus="playSound('click')">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="contact-subject">Asunto</label>
+                            <input type="text" id="contact-subject" name="subject" placeholder="¿De qué quieres hablar?"
+                                onfocus="playSound('click')">
+                        </div>
+                        <div>
+                            <label for="contact-message">Mensaje</label>
+                            <textarea id="contact-message" name="message" placeholder="Escribe tu mensaje aquí..."
+                                required onfocus="playSound('click')"></textarea>
+                        </div>
+                        <div id="form-status" class="text-[11px] tracking-widest uppercase hidden"></div>
+                        <button type="submit" class="btn-void w-full text-center"
+                            id="submit-btn">Transmitir_Mensaje</button>
+                    </form>
+                </div>
+
+                <!-- Contact Info & Social -->
+                <div class="md:col-span-2 space-y-6">
+                    <!-- Info card -->
+                    <div class="p-6 border border-zinc-800 bg-zinc-950/50">
+                        <div
+                            class="text-[10px] text-zinc-400 tracking-[0.3em] uppercase mb-5 pb-2 border-b border-zinc-900">
+                            Canales Directos</div>
+                        <div class="space-y-4">
+                            <a href="mailto:zzzggzzzez@gmail.com"
+                                class="flex items-center gap-3 text-zinc-300 hover:text-white transition-all group"
+                                onmouseover="playSound('nav')">
+                                <span
+                                    class="w-7 h-7 border border-zinc-700 group-hover:border-white flex items-center justify-center text-[10px] transition-colors">✉</span>
+                                <div>
+                                    <div class="text-xs font-bold">Email</div>
+                                    <div class="text-[10px] text-zinc-500">zzzggzzzez@gmail.com</div>
+                                </div>
+                            </a>
+                            <a href="https://discord.gg/" target="_blank"
+                                class="flex items-center gap-3 text-zinc-300 hover:text-white transition-all group"
+                                onmouseover="playSound('nav')">
+                                <span
+                                    class="w-7 h-7 border border-zinc-700 group-hover:border-white flex items-center justify-center text-[10px] transition-colors">◆</span>
+                                <div>
+                                    <div class="text-xs font-bold">Discord</div>
+                                    <div class="text-[10px] text-zinc-500">fmger_79761</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Social links -->
+                    <div class="p-6 border border-zinc-800 bg-zinc-950/50">
+                        <div
+                            class="text-[10px] text-zinc-400 tracking-[0.3em] uppercase mb-5 pb-2 border-b border-zinc-900">
+                            Redes & Plataformas</div>
+                        <div class="space-y-3">
+                            <a href="https://github.com/Igrisv" target="_blank"
+                                class="flex items-center justify-between p-3 border border-zinc-900 hover:border-zinc-600 text-zinc-300 hover:text-white transition-all group"
+                                onmouseover="playSound('nav')">
+                                <span class="text-xs tracking-wider">GITHUB</span>
+                                <span
+                                    class="text-zinc-600 group-hover:text-white text-[10px] transition-colors">→</span>
+                            </a>
+                            <a href="https://itch.io/" target="_blank"
+                                class="flex items-center justify-between p-3 border border-zinc-900 hover:border-zinc-600 text-zinc-300 hover:text-white transition-all group"
+                                onmouseover="playSound('nav')">
+                                <span class="text-xs tracking-wider">ITCH.IO</span>
+                                <span
+                                    class="text-zinc-600 group-hover:text-white text-[10px] transition-colors">→</span>
+                            </a>
+                            <a href="https://twitter.com/" target="_blank"
+                                class="flex items-center justify-between p-3 border border-zinc-900 hover:border-zinc-600 text-zinc-300 hover:text-white transition-all group"
+                                onmouseover="playSound('nav')">
+                                <span class="text-xs tracking-wider">TWITTER / X</span>
+                                <span
+                                    class="text-zinc-600 group-hover:text-white text-[10px] transition-colors">→</span>
+                            </a>
+                            <a href="https://youtube.com/@FmgerDev" target="_blank"
+                                class="flex items-center justify-between p-3 border border-zinc-900 hover:border-zinc-600 text-zinc-300 hover:text-white transition-all group"
+                                onmouseover="playSound('nav')">
+                                <span class="text-xs tracking-wider">YOUTUBE</span>
+                                <span
+                                    class="text-zinc-600 group-hover:text-white text-[10px] transition-colors">→</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Availability -->
+                    <div class="p-4 border border-zinc-800 flex items-center gap-3 bg-zinc-950/30">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span class="text-[11px] text-zinc-300 tracking-widest uppercase">Disponible para
+                            proyectos</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="py-16 md:py-20 text-center reveal">
+        <div class="section-divider mb-12"></div>
+        <div class="text-[10px] tracking-[0.8em] text-zinc-500 uppercase mb-3">FMGER // GAME DEV PORTFOLIO</div>
+        <p class="text-[9px] tracking-[0.5em] text-zinc-600 uppercase">DARKER YET DARKER // SYSTEM_OFFLINE // 2026</p>
+    </footer>
+
+    <!-- PROJECT DETAIL MODAL -->
+    <div id="project-modal">
+        <div class="modal-backdrop" onclick="closeProject()"></div>
+        <div class="modal-content">
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- PROJECT DATA ---
+        const projects = [
+            {
+                id: 'ENTRY_001',
+                title: 'Lost in the wild',
+                category: 'GODOT_4 // 2D RPG',
+                status: 'ACTIVE',
+                statusColor: 'bg-green-500',
+                image: 'https://images.unsplash.com/photo-1614728263952-84ea206f99b6?auto=format&fit=crop&w=1200',
+                description: 'Juego de supervivencia pixel art con narrativa emergente.',
+                features: [
+                    'Sistema de climas dinamicos',
+                    'Narrativa emergente basada en decisiones',
+                    'Experiencia RPG completa',
+                    'Sistema de liena de sangre para enemigos mas fuertes',
+                    '+20 clases para elegir'
+                ],
+                tech: ['Godot 4.6', 'GDScript', 'Survival', 'Narrative', 'Procedural Generation'],
+                year: '2026',
+                status_detail: 'En desarrollo activo'
+            },
+            {
+                id: 'ENTRY_002',
+                title: 'Vesta App',
+                category: 'HERRAMIENTA // ADMINISTRACION',
+                status: 'BETA',
+                statusColor: 'bg-yellow-500',
+                image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200',
+                description: 'Aplicacion para la gestion de recursos financieros',
+                features: [
+                    'Gestion de ingresos e egresos',
+                    'Calendario inteligente',
+                    'Consejos en base a tus ingresos',
+                    'Interfaz limpia',
+                    'Custom'
+                ],
+                tech: ['Godot 4.6', 'Administracion', 'App gestion', 'Custom UI', 'Ia desing'],
+                year: '2026',
+                status_detail: 'Beta pública disponible'
+            },
+            {
+                id: 'ENTRY_017',
+                title: 'GAME OF CHAMPIONS',
+                category: '3D // MOBA 5V5',
+                status: 'PROTOTYPE',
+                statusColor: 'bg-red-500',
+                image: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&w=1200',
+                description: 'Moba 5v5 en desarrollo.',
+                features: [
+                    'Sistema de clasificacion',
+                    '+10 campenos',
+                    'Tienda y skins',
+                    'Gestion de cuentas',
+                    'Mapa 3d'
+                ],
+                tech: ['Godot 4.6', 'Multiplayer', '3D Rendering', 'Moba', 'Comtetitive'],
+                year: '2026',
+                status_detail: 'Prototipo en desarrollo'
+            }
+        ];
+
+        // --- MODAL SYSTEM ---
+        function openProject(index) {
+            const p = projects[index];
+            const modal = document.getElementById('project-modal');
+            const body = document.getElementById('modal-body');
+
+            body.innerHTML = `
+                <div class="relative">
+                    <img src="${p.image}" class="w-full h-48 md:h-72 object-cover opacity-40" alt="${p.title}" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/60 to-transparent"></div>
+                    <button onclick="closeProject(); playSound('click')" class="absolute top-4 right-4 w-10 h-10 border border-zinc-700 hover:border-white flex items-center justify-center transition-colors text-zinc-500 hover:text-white z-10">✕</button>
+                    <div class="absolute bottom-6 left-6 md:left-8 z-10">
+                        <div class="text-[10px] text-zinc-400 tracking-[0.5em] uppercase mb-2">${p.category}</div>
+                        <h3 class="text-3xl md:text-4xl font-display font-bold tracking-tighter">${p.title}</h3>
+                    </div>
+                </div>
+                <div class="p-6 md:p-8">
+                    <div class="flex flex-wrap items-center gap-4 mb-8">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 ${p.statusColor} rounded-full animate-pulse"></div>
+                            <span class="text-[10px] text-zinc-300 tracking-widest uppercase">${p.status_detail}</span>
+                        </div>
+                        <div class="text-[10px] text-zinc-400 tracking-wider">YEAR: ${p.year}</div>
+                        <div class="text-[10px] text-zinc-400 tracking-wider">ID: ${p.id}</div>
+                    </div>
+                    
+                    <p class="text-zinc-300 text-sm leading-relaxed mb-8">${p.description}</p>
+                    
+                    <div class="mb-8">
+                        <div class="text-[11px] text-zinc-400 tracking-[0.3em] uppercase mb-4 pb-2 border-b border-zinc-900">Características Principales</div>
+                        <ul class="space-y-3">
+                            ${p.features.map(f => `
+                                <li class="flex items-start gap-3 text-sm text-zinc-300">
+                                    <span class="text-zinc-500 mt-0.5">▸</span>
+                                    <span>${f}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-8">
+                        <div class="text-[11px] text-zinc-400 tracking-[0.3em] uppercase mb-4 pb-2 border-b border-zinc-900">Stack Tecnológico</div>
+                        <div class="flex flex-wrap gap-2">
+                            ${p.tech.map(t => `<span class="text-[10px] px-3 py-1.5 border border-zinc-700 text-zinc-300 uppercase tracking-wider hover:border-zinc-500 hover:text-white transition-colors">${t}</span>`).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-zinc-900">
+                        <button onclick="playSound('confirm')" class="btn-void flex-1 text-center">Ver_Demo</button>
+                        <button onclick="playSound('click')" class="btn-void flex-1 text-center border-zinc-800 text-zinc-600">Código_Fuente</button>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            playSound('confirm');
+        }
+
+        function closeProject() {
+            const modal = document.getElementById('project-modal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeProject();
+        });
+
+        // --- MOBILE MENU ---
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const hamburger = document.getElementById('hamburger');
+            menu.classList.toggle('active');
+            hamburger.classList.toggle('active');
+            document.body.style.overflow = menu.classList.contains('active') ? 'hidden' : '';
+        }
+
+        function closeMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const hamburger = document.getElementById('hamburger');
+            menu.classList.remove('active');
+            hamburger.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // --- AUDIO SYSTEM (Procedural Synth) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'nav') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(880, now);
+                osc.frequency.exponentialRampToValueAtTime(440, now + 0.1);
+                gain.gain.setValueAtTime(0.04, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start();
+                osc.stop(now + 0.1);
+            } else if (type === 'confirm') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start();
+                osc.stop(now + 0.2);
+            } else if (type === 'click') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, now);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start();
+                osc.stop(now + 0.05);
+            }
+        }
+
+        // --- ANIMACIÓN DE SCROLL (REVEAL) ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    // Activate skill bars
+                    if (entry.target.id === 'skills' || entry.target.closest('#skills')) {
+                        document.querySelectorAll('.skill-progress').forEach(p => {
+                            p.style.width = p.dataset.width;
+                        });
+                    }
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // --- BACKGROUND CANVAS (VOID PARTICLES) ---
+        const canvas = document.getElementById('void-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mouseX = 0, mouseY = 0;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.vX = (Math.random() - 0.5) * 0.3;
+                this.vY = (Math.random() - 0.5) * 0.3;
+                this.life = Math.random();
+                this.maxLife = this.life;
+            }
+            update() {
+                // Subtle mouse repulsion
+                const dx = this.x - mouseX;
+                const dy = this.y - mouseY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 100) {
+                    this.vX += (dx / dist) * 0.05;
+                    this.vY += (dy / dist) * 0.05;
+                }
+
+                this.x += this.vX;
+                this.y += this.vY;
+                this.vX *= 0.99;
+                this.vY *= 0.99;
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.life * 0.25})`;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+            }
+        }
+
+        for (let i = 0; i < 120; i++) particles.push(new Particle());
+
+        // Draw connection lines between nearby particles
+        function drawConnections() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 80) {
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${(1 - dist / 80) * 0.04})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            drawConnections();
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // --- TERMINAL LOGS ---
+        const logs = [
+            "Escaneando memoria física...",
+            "FMGER_Core: Conexión estable.",
+            "Godot Engine 4.3: Cargado.",
+            "Renderizado de sombras: Activo.",
+            "Sincronizando con el vacío...",
+            "¿Estás escuchando?",
+            "Oscuro, más oscuro todavía.",
+            "Sujeto detectado en la interfaz.",
+            "Buscando fragmentos perdidos...",
+            "Compilación de shaders: OK.",
+            "Partículas: 120 activas.",
+            "Sistema de audio: Online.",
+            "Cargando registros del kernel..."
+        ];
+
+        const logEl = document.getElementById('terminal-log');
+        function addLog() {
+            const line = document.createElement('div');
+            line.textContent = `> [${new Date().toLocaleTimeString()}] ${logs[Math.floor(Math.random() * logs.length)]}`;
+            line.style.opacity = '0';
+            line.style.transition = 'opacity 0.3s ease';
+            logEl.prepend(line);
+            requestAnimationFrame(() => line.style.opacity = '1');
+            if (logEl.children.length > 12) logEl.lastChild.remove();
+        }
+        setInterval(addLog, 3000);
+        addLog();
+
+        // --- PRELOADER ---
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('preloader').classList.add('hidden');
+            }, 1500);
+        });
+
+        // --- NAV SCROLL EFFECT ---
+        let lastScrollY = 0;
+        const nav = document.querySelector('nav');
+        window.addEventListener('scroll', () => {
+            const currentScrollY = window.scrollY;
+            if (currentScrollY > 100) {
+                nav.style.padding = '16px 24px';
+                nav.style.transition = 'padding 0.3s ease';
+            } else {
+                nav.style.padding = '';
+            }
+            lastScrollY = currentScrollY;
+        });
+
+        // --- UTILS ---
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- CONTACT FORM HANDLER (Web3Forms API) ---
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            playSound('confirm');
+
+            const form = document.getElementById('contact-form');
+            const statusEl = document.getElementById('form-status');
+            const submitBtn = document.getElementById('submit-btn');
+
+            // Update hidden subject with user's subject
+            const subjectInput = document.getElementById('contact-subject');
+            const hiddenSubject = document.getElementById('hidden-subject');
+            if (subjectInput.value) {
+                hiddenSubject.value = subjectInput.value;
+            }
+
+            // Show sending state
+            submitBtn.textContent = 'Transmitiendo...';
+            submitBtn.style.pointerEvents = 'none';
+            submitBtn.style.opacity = '0.5';
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('https://api.web3forms.com/submit', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                statusEl.classList.remove('hidden');
+
+                if (result.success) {
+                    statusEl.style.color = '#4ade80';
+                    statusEl.textContent = '> MENSAJE TRANSMITIDO // CANAL ABIERTO ✓';
+                    form.reset();
+                } else {
+                    statusEl.style.color = '#f87171';
+                    statusEl.textContent = '> ERROR // TRANSMISIÓN FALLIDA. INTENTA DE NUEVO.';
+                }
+            } catch (error) {
+                statusEl.classList.remove('hidden');
+                statusEl.style.color = '#f87171';
+                statusEl.textContent = '> ERROR DE CONEXIÓN // VERIFICA TU RED.';
+            }
+
+            submitBtn.textContent = 'Transmitir_Mensaje';
+            submitBtn.style.pointerEvents = '';
+            submitBtn.style.opacity = '';
+
+            // Hide status after a while
+            setTimeout(() => {
+                statusEl.classList.add('hidden');
+            }, 6000);
+        }
+    </script>
+
+    <!-- ANALYTICS: GoatCounter) -->
+    <script data-goatcounter="https://fmger.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+
+</html>
