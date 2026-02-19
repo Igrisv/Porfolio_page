@@ -1476,8 +1476,36 @@
         }
     </script>
 
-    <!-- ANALYTICS: GoatCounter) -->
-    <script data-goatcounter="https://fmger.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+    <!-- ANALYTICS (inline, resistente a adblockers) -->
+    <script>
+        (function () {
+            // No trackear en local
+            if (location.hostname === 'localhost' || location.protocol === 'file:') return;
+            // No trackear bots
+            if (navigator.userAgent.match(/(bot|crawl|spider|archive)/i)) return;
+
+            var d = {
+                p: location.pathname + location.search || '/',
+                t: document.title || '',
+                r: document.referrer || '',
+                s: [window.screen.width, window.screen.height, (window.devicePixelRatio || 1)].join(',')
+            };
+
+            var q = 'p=' + encodeURIComponent(d.p) +
+                '&t=' + encodeURIComponent(d.t) +
+                '&r=' + encodeURIComponent(d.r) +
+                '&s=' + encodeURIComponent(d.s);
+
+            var u = 'https://fmger.goatcounter.com/count?' + q + '&rnd=' + Math.random().toString(36).substr(2);
+
+            // Enviar con sendBeacon (no bloqueable) o Image pixel (fallback)
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(u);
+            } else {
+                new Image().src = u;
+            }
+        })();
+    </script>
 </body>
 
 </html>
